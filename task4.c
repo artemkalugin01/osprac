@@ -1,18 +1,21 @@
-#include <sys/types.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-int main(int argc, char* argv[],char* envp[])
+int main(int argc, char* argv[], char* envp[])
 {
-  pid_t pid = fork();
-  int start_pid = getpid();
-  fork();
+    pid_t pid, ppid;
 
-  if(getppid() == start_pid){
-    execle("task4_executable","hello executable",0,envp);
-    printf("Execl failure!");
-}
-  
+    int start_pid = getpid();
+    fork();
 
-  return 0;
+    if(getppid() == start_pid){
+        // Print current datetime
+	execle("/bin/help", "help", 0, envp);
+
+        printf("Execl failure!");
+        exit(-1);
+    }
+
+    return 0;
 }
