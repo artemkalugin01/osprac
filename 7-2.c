@@ -14,7 +14,7 @@ int main()
     int file_size = 0;
     int *file_size_ptr;
     
-    if ((key = ftok(paths,0)) < 0) {
+    if ((key = ftok(path,0)) < 0) {
         printf("Cannot generate key\n");
         return -1;
     }
