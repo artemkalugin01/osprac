@@ -1,48 +1,65 @@
+#include <sys/types.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <unistd.h>
-#include <string.h>
-#include <malloc.h>
 
+#define BUFFER_NAME_SIZE 32
 
-void create_bind(const char *const path, int path_len, int *const recursion_depth) {
-    char *new_path = (char *) malloc((path_len + 2) * sizeof(char));
-    strcpy(new_path, path);
-    if (new_path[path_len - 1] == 'z' || new_path[path_len - 1] == 'Z') {
-        strcat(new_path, "a");
-        path_len++;
-    } else {
-        new_path[path_len - 1]++;
-    
-    if (symlink(path, new_path) == -1) {
-        *recursion_depth = 0;
-        return;
-    }
-    create_bind(new_path, path_len, recursion_depth);
-    (*recursion_depth)++;
-    unlink(new_path);
-    free(new_path);
+void count_max_link_depth(int recursive_depth) {
+	char previous_file_name[BUFFER_NAME_SIZE];
+	char current_file_name[BUFFER_NAME_SIZE];
+
+	sprintf(previous_file_name, "rec_count_test%d", recursive_depth);
+	sprintf(current_file_name, "rec_count_test%d", recursive_depth + 1);
+
+	if (symlink(previous_file_name, current_file_name) != 0) {
+		printf("Cannot create symlink. \n");
+		exit(-1);
+	}
+	recursive_depth++;
+
+	int file_descriptor;
+	if ((file_descriptor = open(current_file_name, O_RDWR | O_CREAT, 0666)) < 0) {
+		printf("Max recursive link depth was reached.\n");
+		printf("Recursive depth is %d\n", recursive_depth - 1);
+		if (remove(current_file_name) < 0) {
+			printf("Unable to remove a link.\n");
+			exit(-1);
+		}
+		return;
+	}
+	if (close(file_descriptor) < 0) {
+		printf("Cannot close the file.\n");
+		exit(-1);
+	}
+
+	count_max_link_depth(recursive_depth);
+	if (remove(current_file_name) < 0) {
+		printf("Cannot remove a link.\n");
+		exit(-1);
+	}
 }
 
 int main() {
-    FILE *f;
-    int depth;
+	char file_name[] = "rec_count_test0";
+	int file_descriptor;
 
-    if ((f = fopen("a", "w")) == NULL) {
-        printf("Cannot create file. ");
-        return -1;
-    }
-    if (fputs("Original file", f) == EOF) {
-        printf("Cannot write to file. ");
-        return -1;
-    }
+	if ((file_descriptor = open(file_name, O_RDWR | O_CREAT, 0666)) < 0) {
+		printf("Cannot open the file.\n");
+		return -1;
+	}
+	if (close(file_descriptor) < 0) {
+		printf("Cannot close file.\n");
+		return -1;
+	}
 
-    create_bind("a", 1, &depth);
-    printf("Depth of recursion: %d", depth);
+	count_max_link_depth(0);
+	if (remove(file_name) < 0) {
+		printf("Cannot remove initial file.\n");
+		return -1;
+	}
 
-    if (fclose(f) == EOF) {
-        printf("Cannot close file ");
-        return -1;
-    }
-    return 0;
+	return 0;
 }
