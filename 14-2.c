@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <signal.h>
 
-void my_handler(int nsig) {
+void handler(int nsig) {
 	if (nsig == SIGINT) {
 		printf("Signal: %d. Ctrl+C is ignored.\nContinue running\n", nsig);
 	}
@@ -11,8 +11,8 @@ void my_handler(int nsig) {
 }
 
 int main() {
-	signal(SIGINT, my_handler);
-	signal(SIGQUIT, my_handler);
+	signal(SIGINT, handler);
+	signal(SIGQUIT, handler);
 	while (1);
 	return 0;
 }
